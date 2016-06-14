@@ -631,6 +631,44 @@ public class MainOneSignalClassRunner {
       Assert.assertFalse(lastGetTags.has("object"));
    }
 
+   static boolean failedCurModTest;
+   @Test
+   public void testSendTagsConcurrentModificationException() throws Exception {
+      OneSignalInit();
+
+      final Thread mainThread = Thread.currentThread();
+      for(int a = 0; a < 100; a++) {
+         for (int i = 0; i < 100; i++) {
+            newSendTagTestThread(mainThread, i).start();
+            Assert.assertFalse(failedCurModTest);
+         }
+      }
+
+      Assert.assertFalse(failedCurModTest);
+   }
+
+   private static Thread newSendTagTestThread(final Thread mainThread, final int id) {
+      return new Thread(new Runnable() {
+         @Override
+         public void run() {
+            try {
+               for (int j = 0; j < 100; j++) {
+                  if (failedCurModTest)
+                     break;
+                  OneSignal.sendTags("{\"key" + id + "\": " + j + "}");
+               }
+            } catch (Throwable t) {
+               // Ignore the flaky Robolectric null error.
+               if (t.getStackTrace()[0].getClassName().equals("org.robolectric.shadows.ShadowMessageQueue"))
+                  return;
+               failedCurModTest = true;
+               mainThread.interrupt();
+               throw t;
+            }
+         }
+      });
+   }
+
    @Test
    public void shouldSaveToSyncIfKilledBeforeDelayedCompare() throws Exception {
       OneSignalInit();
