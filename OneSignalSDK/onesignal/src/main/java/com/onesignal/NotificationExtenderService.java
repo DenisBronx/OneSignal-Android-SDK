@@ -82,7 +82,7 @@ public abstract class NotificationExtenderService extends IntentService {
          return null;
 
       osNotificationDisplayedResult = new OSNotificationDisplayedResult();
-      osNotificationDisplayedResult.notificationId = NotificationBundleProcessor.Process(this, currentExtras, overrideSettings);
+      osNotificationDisplayedResult = NotificationBundleProcessor.Process(this, currentExtras, overrideSettings);
       return osNotificationDisplayedResult;
    }
 

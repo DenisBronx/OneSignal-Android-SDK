@@ -51,12 +51,12 @@ class NotificationBundleProcessor {
       Process(context, bundle, overrideSettings);
    }
 
-   static int Process(Context context, Bundle bundle, NotificationExtenderService.OverrideSettings overrideSettings) {
+   static OSNotificationDisplayedResult Process(Context context, Bundle bundle, NotificationExtenderService.OverrideSettings overrideSettings) {
       boolean showAsAlert = OneSignal.getInAppAlertNotificationEnabled(context);
 
-      int notificationId = GenerateNotification.fromBundle(context, bundle, showAsAlert && OneSignal.isAppActive(), overrideSettings);
-      saveNotification(context, bundle, false, notificationId);
-      return notificationId;
+      OSNotificationDisplayedResult osNotificationDisplayedResult= GenerateNotification.fromBundle(context, bundle, showAsAlert && OneSignal.isAppActive(), overrideSettings);
+      saveNotification(context, bundle, false, osNotificationDisplayedResult.notificationId);
+      return osNotificationDisplayedResult;
    }
 
    static JSONArray bundleAsJsonArray(Bundle bundle) {

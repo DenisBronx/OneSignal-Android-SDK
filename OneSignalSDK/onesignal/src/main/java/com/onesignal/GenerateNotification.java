@@ -88,7 +88,7 @@ class GenerateNotification {
          notificationOpenedClass = NotificationOpenedActivity.class;
    }
 
-   static int fromBundle(Context inContext, Bundle bundle, boolean showAsAlert, NotificationExtenderService.OverrideSettings overrideSettings) {
+   static OSNotificationDisplayedResult fromBundle(Context inContext, Bundle bundle, boolean showAsAlert, NotificationExtenderService.OverrideSettings overrideSettings) {
       setStatics(inContext);
 
       JSONObject jsonBundle = NotificationBundleProcessor.bundleAsJSONObject(bundle);
@@ -99,7 +99,7 @@ class GenerateNotification {
       return showNotification(jsonBundle, overrideSettings);
    }
 
-   private static int showNotificationAsAlert(final JSONObject gcmJson, final Activity activity) {
+   private static OSNotificationDisplayedResult showNotificationAsAlert(final JSONObject gcmJson, final Activity activity) {
       final int aNotificationId = new Random().nextInt();
 
       activity.runOnUiThread(new Runnable() {
@@ -174,7 +174,10 @@ class GenerateNotification {
          }
       });
 
-      return aNotificationId;
+      OSNotificationDisplayedResult osNotificationDisplayedResult=new OSNotificationDisplayedResult();
+      osNotificationDisplayedResult.notificationId=aNotificationId;
+
+      return osNotificationDisplayedResult;
    }
 
    private static CharSequence getTitle(JSONObject gcmBundle) {
@@ -284,7 +287,7 @@ class GenerateNotification {
    }
 
    // Put the message into a notification and post it.
-   private static int showNotification(JSONObject gcmBundle, NotificationExtenderService.OverrideSettings overrideSettings) {
+   private static OSNotificationDisplayedResult showNotification(JSONObject gcmBundle, NotificationExtenderService.OverrideSettings overrideSettings) {
       Random random = new Random();
 
       String group = null;
@@ -301,6 +304,8 @@ class GenerateNotification {
       if (overrideSettings != null && overrideSettings.extender != null)
          notifBuilder.extend(overrideSettings.extender);
 
+      int summaryNotificationId=0;
+
       if (group != null) {
          PendingIntent contentIntent = getNewActionPendingIntent(random.nextInt(), getNewBaseIntent(notificationId).putExtra("onesignal_data", gcmBundle.toString()).putExtra("grp", group));
          notifBuilder.setContentIntent(contentIntent);
@@ -308,7 +313,7 @@ class GenerateNotification {
          notifBuilder.setDeleteIntent(deleteIntent);
          notifBuilder.setGroup(group);
 
-         createSummaryNotification(gcmBundle);
+         summaryNotificationId=createSummaryNotification(gcmBundle);
       }
       else {
          PendingIntent contentIntent = getNewActionPendingIntent(random.nextInt(), getNewBaseIntent(notificationId).putExtra("onesignal_data", gcmBundle.toString()));
@@ -325,14 +330,18 @@ class GenerateNotification {
          NotificationManagerCompat.from(currentContext).notify(notificationId, notifBuilder.build());
       }
 
-      return notificationId;
+      OSNotificationDisplayedResult osNotificationDisplayedResult=new OSNotificationDisplayedResult();
+      osNotificationDisplayedResult.notificationId=notificationId;
+      osNotificationDisplayedResult.summaryNotificationId=summaryNotificationId;
+
+      return osNotificationDisplayedResult;
    }
 
-   private static void createSummaryNotification(JSONObject gcmBundle) {
-      createSummaryNotification(null, false, gcmBundle);
+   private static int createSummaryNotification(JSONObject gcmBundle) {
+      return createSummaryNotification(null, false, gcmBundle);
    }
 
-   static void createSummaryNotification(Context inContext,  boolean updateSummary, JSONObject gcmBundle) {
+   static int createSummaryNotification(Context inContext,  boolean updateSummary, JSONObject gcmBundle) {
       if (updateSummary)
          setStatics(inContext);
 
@@ -507,6 +516,8 @@ class GenerateNotification {
 
       cursor.close();
       writableDb.close();
+
+      return summaryNotificationId;
    }
 
    private static boolean isValidResourceName(String name) {
